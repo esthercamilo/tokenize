@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from backend.api.models import User
-from backend.api.serializers import UserSerializer
+from api.models import User
+from api.serializers import UserSerializer
 
 
 try:
