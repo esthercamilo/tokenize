@@ -3,8 +3,8 @@ import jwt
 import requests
 import datetime
 
-API_KEY = "fe0c08f7-ea1a-49ed-8076-5da79b0bc152"  # Substitua pela sua API Key do Fireblocks
-SECRET_PATH = "/home/esther/GitProjects/tokenize/backend/core/fireblocks_secret4.key"  # Substitua pelo caminho para o arquivo da chave privada
+API_KEY = "d570e7fe-2ec4-4973-bab8-e621c0cd3b9c"  # Substitua pela sua API Key do Fireblocks
+SECRET_PATH = "/home/esther/GitProjects/tokenize/backend/core/fireblocks_secret7.key"  # Substitua pelo caminho para o arquivo da chave privada
 
 # Função para gerar o token de autenticação
 def generate_token():
@@ -12,16 +12,14 @@ def generate_token():
         private_key = f.read()
 
     # Usar UTC para os timestamps
-    # current_time_utc = int(time.time())  # Timestamp atual em segundos, UTC
-    current_time_utc = int(datetime.datetime.now().timestamp())
+    current_time_utc = int(time.time())  # Timestamp atual em segundos, UTC
+    # current_time_utc = int(datetime.datetime.now().timestamp())
     nonce = int(time.time() * 1000)  # Número único em milissegundos para evitar replay attacks
 
     payload = {
         'uri': '/v1/vault/accounts_paged',  # Certifique-se de que o URI está correto
         'nonce': nonce,
         'iat': current_time_utc,
-        'exp': 36000,
-        'sub': API_KEY
     }
 
     # Gerar o token JWT
