@@ -1,78 +1,47 @@
-import requests
-import jwt  # type: ignore
 import time
-import json
+import jwt
+import requests
+import fireblocks
 
-API_BASE_URL = "https://api.fireblocks.io/v1"
-API_KEY = "your_api_key"  # Replace with the fireblocks api Key
-SECRET_PATH = "path/to/your_private_key.pem"  # Replace with the path to the private key file
+API_KEY = "fd53f9ca-3912-4c5c-8ae5-5a08a312ffa3"  # Substitua pela sua API Key do Fireblocks
+SECRET_PATH = "/home/esther/GitProjects/tokenize/backend/core/fireblocks_secret2.key"  # Substitua pelo caminho para o arquivo da chave privada
 
-# Function to generate JWT token
-def generate_jwt(api_key, secret_path):
-    with open(secret_path, "r") as key_file:
-        private_key = key_file.read()
-    
-    headers = {
-        "alg": "RS256",
-        "typ": "JWT",
-        "kid": api_key
-    }
-    
+# Função para gerar o token de autenticação
+def generate_token():
+    with open(SECRET_PATH, 'r') as f:
+        private_key = f.read()
+
     payload = {
-        "nonce": int(time.time() * 1000),
-        "iat": int(time.time())
+        'uri': 'v1/vault/accounts_paged',
+        'nonce': int(time.time() * 1000),  # Número único para evitar replay attacks
+        'iat': int(time.time())  # Timestamp de quando o token foi gerado
     }
-    
-    token = jwt.encode(payload, private_key, algorithm='RS256', headers=headers)
+
+    # Gerar o token JWT
+    token = jwt.encode(payload, private_key, algorithm='RS256', headers={'kid': API_KEY})
     return token
 
-# Function to create a token transaction
-def create_token_transaction(api_key, secret_path, source_vault_account_id, destination_address, amount, asset_id, gas_limit, gas_price):
-    jwt_token = generate_jwt(api_key, secret_path)
-    
+# Função para listar contas no Fireblocks
+def list_vault_accounts():
+
+    url = "https://sandbox-api.fireblocks.io/v1/vault/accounts_paged"
+    token = generate_token()  # Gerar o token JWT
     headers = {
-        "X-API-Key": api_key,
-        "Authorization": f"Bearer {jwt_token}",
-        "Content-Type": "application/json"
+        'X-API-Key': API_KEY,
+        'Authorization': f'Bearer {token}'  # Adicionar o token JWT no cabeçalho Authorization
     }
-    
-    data = {
-        "assetId": asset_id,  # Example: "ETH"
-        "source": {
-            "type": "VAULT_ACCOUNT",
-            "id": source_vault_account_id  # Replace with the vault account ID
-        },
-        "destination": {
-            "type": "ONE_TIME_ADDRESS",
-            "oneTimeAddress": {
-                "address": destination_address,  # Replace with the recipient's address
-                "tag": "",  # Only for certain blockchains (e.g., XRP, XLM)
-                "destination": "",
-                "destinationTag": "",
-                "label": "Recipient Name"
-            }
-        },
-        "amount": str(amount),  # Amount to transfer
-        "fee": "",
-        "gasLimit": gas_limit,  # Optional: for Ethereum transactions
-        "gasPrice": gas_price,  # Optional: for Ethereum transactions
-        "networkFee": "",
-        "externalTxId": "",
-        "note": "Token transaction via Fireblocks API"
-    }
-    
-    response = requests.post(f"{API_BASE_URL}/transactions", headers=headers, data=json.dumps(data))
-    
+
+    response = requests.get(url, headers=headers)
+
     if response.status_code == 200:
-        print("Transaction created successfully:", response.json())
+        return response.json()
     else:
-        print("Error:", response.status_code, response.text)
+        print(f"Erro: {response.status_code} - {response.text}")
+        return None
 
-source_vault_account_id = "Test Account"
-destination_address = "Test Account2"
-amount = 0.01  # Amount of tokens to send
-asset_id = "ETH"  # Token type
-gas_limit = 21000  # Typical gas limit for a simple ETH transfer
-gas_price = 50  # Gwei
-
-create_token_transaction(API_KEY, SECRET_PATH, source_vault_account_id, destination_address, amount, asset_id, gas_limit, gas_price)
+# Executa a função
+if __name__ == "__main__":
+    accounts = list_vault_accounts()
+    if accounts:
+        print("Contas do Fireblocks:")
+        print(accounts)
